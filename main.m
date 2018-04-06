@@ -1,14 +1,15 @@
 close all;
 
-cave_x = 1;
-cave_y = 1;
+cave_x = 10;
+cave_y = 10;
+spawned = 0;
 num_ants = 10;
 grid_size = 100;
 max_iter = 1000;
-delay = 0.01;
+delay = 0.025;
 
-x = ones(num_ants, 1); % x coordinate of ant i.
-y = ones(num_ants, 1); % y coordinate of ant i.
+x = ones(num_ants, 1) * cave_x; % x coordinate of ant i.
+y = ones(num_ants, 1) * cave_y; % y coordinate of ant i.
 z = zeros(grid_size); % Location state matrix.
 theta = rand(num_ants, 1) * 2 * pi; % Orientation of ant i.
 has_food = zeros(num_ants, 1); % Does ant i have food?
@@ -22,7 +23,7 @@ function x_new = bounded(x_old, lo, hi)
         x_new = hi;
     else
         x_new = x_old;
-    end
+    end % if
 end
 
 function theta_new = wrapped(theta_old)
@@ -32,26 +33,30 @@ function theta_new = wrapped(theta_old)
         theta_new = theta_old - 2 * pi;
     else
         theta_new = theta_old;
-    end
+    end % if
 end
 
 figure;
 im = image(z);
 for iter = 1:max_iter
-    for i = 1:num_ants
+    if spawned < num_ants && mod(iter, 10) == 0
+        spawned += 1;
+        z(x(spawned), y(spawned)) += 1;
+    end % if
+    for i = 1:spawned
         % Move ant out of current location.
-        z(x(i), y(i)) -= 100;
+        z(x(i), y(i)) -= 1;
         % Compute new location.
         x(i) += round(cos(theta(i)));
         y(i) += round(sin(theta(i)));
-        theta(i) += rand() * pi / 4 - pi / 8;
+        theta(i) += rand() * pi / 2 - pi / 4;
         % Normalize.
         x(i) = bounded(x(i), 1, grid_size);
         y(i) = bounded(y(i), 1, grid_size);
         theta(i) = wrapped(theta(i));
         % Move ant into new location.
-        z(x(i), y(i)) += 100;
+        z(x(i), y(i)) += 1;
     end % for
     pause(delay);
-    set(im, 'CData', z); % Update image.
+    set(im, 'CData', z * 100); % Update image.
 end % for
