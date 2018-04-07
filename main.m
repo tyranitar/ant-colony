@@ -11,6 +11,8 @@ dev_range = pi / 4;                 % Orientation deviation range.
 spawn_period = 1;                   % Time between ant spawns.
 delay = 0;                          % Delay between draws; only set if the simulation is too fast.
 has_predator = true;                % Is the predator on the prowl?
+can_retreat = true;                 % Can the ants retreat to the colony?
+counter_th = 250;                   % Threshold for retreating.
 walk_home = @directed_walk;
 
 x = ones(num_ants, 1) * home_x;     % x coordinate of ant i.
@@ -23,7 +25,10 @@ p_search = zeros(grid_size);        % Search pheromone matrix.
 p_return = zeros(grid_size);        % Return pheromone matrix.
 im_data = zeros(grid_size);         % Image data matrix.
 counter = zeros(num_ants, 1);       % No encounter counter.
-dead = false(num_ants, 1);          % Is ant i dead?
+retreating = false(num_ants, 1);    % Is ant i retreating?
+inactive = false(num_ants, 1);      % Is ant i inactive?
+num_active = num_ants;              % Number of active ants.
+num_alive = num_ants;               % Number of alive ants.
 
 % Initialize food.
 food_x = grid_size - home_x - 5:grid_size - home_x;
@@ -39,26 +44,47 @@ figure;
 im = image(im_data);
 axis equal;
 axis off;
-for iter = 1:max_iter
+while num_active > 0
     if num_spawned < num_ants && mod(iter, spawn_period) == 0   % Spawn new ant.
         num_spawned += 1;
         z(x(num_spawned), y(num_spawned)) += 1;
     end % if
     for i = 1:num_spawned                                       % Move spawned ants.
-        if dead(i)
+        if inactive(i)
             continue;
         end % if
         z(x(i), y(i)) -= 1;                                     % Move ant out of current location.
         if has_predator && abs(x(i) - pred_x) < 2 && abs(y(i) - pred_y) < 2
-            dead(i) = true;
+            inactive(i) = true;
+            num_active -= 1;
+            num_alive -= 1;
             continue;
-        end
+        end % if
+        if can_retreat && ~retreating(i)
+            if p_search(x(i), y(i)) > 0 || p_return(x(i), y(i)) > 0
+                counter(i) = 0;
+            else
+                counter(i) += 1;
+                if counter(i) > counter_th
+                    retreating(i) = true;
+                    disp('retreating');
+                    fflush(stdout);
+                end % if
+            end % if
+        end % if
         if has_food(i)                                          % Return to colony with food.
             p_return(x(i), y(i)) = 10;                          % Excrete return pheromone trail.
             [x(i), y(i), theta(i)] = walk_home([x(i), y(i)], [home_x, home_y], theta(i), 1, grid_size, dev_range);
             if x(i) == home_x && y(i) == home_y                 % Successfully brought food back to colony.
                 has_food(i) = false;
             end % if
+        elseif can_retreat && retreating(i)
+            if x(i) == home_x && y(i) == home_y
+                inactive(i) = true;
+                num_active -= 1;
+                continue;
+            end % if
+            [x(i), y(i), theta(i)] = walk_home([x(i), y(i)], [home_x, home_y], theta(i), 1, grid_size, dev_range);
         else                                                    % Search for food.
             p_search(x(i), y(i)) = 10;                          % Excrete search pheromone trail.
             [p_found, x_p, y_p] = find_pheromone(p_return, x(i), y(i));
@@ -86,6 +112,7 @@ for iter = 1:max_iter
     end % if
     pause(delay);
     set(im, 'CData', im_data);                                  % Update image.
-    p_search(p_search > 0) -= 0.1;                              % Search pheromone evaporation.
+    p_search(p_search > 0) -= 0.5;                              % Search pheromone evaporation.
     p_return(p_return > 0) -= 0.1;                              % Return heromone evaporation.
 end % for
+fprintf('number of survivor ants: %d\n', num_alive);
