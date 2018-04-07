@@ -7,7 +7,7 @@ num_ants = 100;                     % Total number of ants.
 num_spawned = 0;                    % Number of spawned ants.
 grid_size = 200;                    % Size of simulation grid.
 max_iter = 10000;                   % Number of simulation iterations.
-dev_range = pi / 2;                 % Orientation deviation range.
+dev_range = pi / 4;                 % Orientation deviation range.
 delay = 0;                          % Delay between draws; only set if the simulation is too fast.
 walk_home = @directed_walk;
 
@@ -50,7 +50,7 @@ for iter = 1:max_iter
             if food(x(i), y(i))
                 has_food(i) = 1;
             end % if
-        end
+        end % if
         z(x(i), y(i)) += 1; % Move ant into new location.
     end % for
     im_data = zeros(grid_size);
