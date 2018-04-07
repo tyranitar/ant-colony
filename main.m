@@ -49,13 +49,13 @@ for iter = 1:max_iter
             continue;
         end % if
         z(x(i), y(i)) -= 1;                                     % Move ant out of current location.
-        if has_predator && x(i) == pred_x && y(i) == pred_y
+        if has_predator && abs(x(i) - pred_x) < 2 && abs(y(i) - pred_y) < 2
             dead(i) = true;
             continue;
         end
         if has_food(i)                                          % Return to colony with food.
             p_return(x(i), y(i)) = 10;                          % Excrete return pheromone trail.
-            [x(i), y(i), theta(i)] = walk_home([x(i), y(i)], [home_x, home_y], theta(i), grid_size, dev_range);
+            [x(i), y(i), theta(i)] = walk_home([x(i), y(i)], [home_x, home_y], theta(i), 1, grid_size, dev_range);
             if x(i) == home_x && y(i) == home_y                 % Successfully brought food back to colony.
                 has_food(i) = false;
             end % if
@@ -67,7 +67,7 @@ for iter = 1:max_iter
                 x(i) = x_p;
                 y(i) = y_p;
             else                                                % No return pheromone trail found; random walk.
-                [x(i), y(i), theta(i)] = random_walk(x(i), y(i), theta(i), grid_size, dev_range);
+                [x(i), y(i), theta(i)] = random_walk(x(i), y(i), theta(i), 1, grid_size, dev_range);
             end % if
             if food(x(i), y(i))                                 % Found food.
                 has_food(i) = true;
@@ -81,8 +81,8 @@ for iter = 1:max_iter
     im_data(p_return > 0) = 60 - p_return(p_return > 0);
     im_data(z > 0) = 30;
     if has_predator
-        [pred_x, pred_y, pred_theta] = random_walk(pred_x, pred_y, pred_theta, grid_size, dev_range);
-        im_data(pred_x, pred_y) = 40;
+        [pred_x, pred_y, pred_theta] = random_walk(pred_x, pred_y, pred_theta, 2, grid_size - 1, dev_range);
+        im_data(pred_x - 1:pred_x + 1, pred_y - 1:pred_y + 1) = 40;
     end % if
     pause(delay);
     set(im, 'CData', im_data);                                  % Update image.
