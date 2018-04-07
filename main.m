@@ -55,7 +55,7 @@ for iter = 1:max_iter
     end % for
     im_data = zeros(grid_size);
     im_data(food > 0) = 60;
-    im_data(p_return > 0) = 40 + p_return(p_return > 0);
+    im_data(p_return > 0) = 50 - p_return(p_return > 0);
     im_data(z > 0) = 20;
     pause(delay);
     set(im, 'CData', im_data);                                  % Update image.
