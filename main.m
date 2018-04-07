@@ -17,6 +17,7 @@ z = zeros(grid_size);               % Location matrix.
 food = zeros(grid_size);            % Food matrix.
 theta = rand(num_ants, 1) * 2 * pi; % Orientation of ant i.
 has_food = zeros(num_ants, 1);      % Does ant i have food?
+p_search = zeros(grid_size);        % Search pheromone matrix.
 p_return = zeros(grid_size);        % Return pheromone matrix.
 im_data = zeros(grid_size);         % Image data matrix.
 food(grid_size - home_x - 10:grid_size - home_x, grid_size - home_y - 10:grid_size - home_y) = 1;
@@ -26,25 +27,26 @@ im = image(im_data);
 axis equal;
 axis off;
 for iter = 1:max_iter
-    if num_spawned < num_ants && mod(iter, 10) == 0             % Spawn new ant.
-        num_spawned += 1;
+    if num_spawned < num_ants % && mod(iter, 10) == 0
+        num_spawned += 1;                                       % Spawn new ant.
         z(x(num_spawned), y(num_spawned)) += 1;
     end % if
     for i = 1:num_spawned                                       % Move spawned ants.
         z(x(i), y(i)) -= 1;                                     % Move ant out of current location.
         if has_food(i)                                          % Return to colony with food.
-            p_return(x(i), y(i)) = 10;                          % Excrete pheromone trail.
+            p_return(x(i), y(i)) = 10;                          % Excrete return pheromone trail.
             [x(i), y(i), theta(i)] = walk_home([x(i), y(i)], [home_x, home_y], theta(i), grid_size, dev_range);
             if x(i) == home_x && y(i) == home_y                 % Successfully brought food back to colony.
                 has_food(i) = 0;
             end % if
         else                                                    % Search for food.
+            p_search(x(i), y(i)) = 10;                          % Excrete search pheromone trail.
             [p_found, x_p, y_p] = find_pheromone(p_return, x(i), y(i));
-            if p_found                                          % Pheromone trail found.
+            if p_found                                          % Return pheromone trail found.
                 theta(i) = get_theta([x(i), y(i)], [x_p, y_p]); % Orient ant in trail direction.
                 x(i) = x_p;
                 y(i) = y_p;
-            else                                                % No trail found; random walk.
+            else                                                % No return pheromone trail found; random walk.
                 [x(i), y(i), theta(i)] = random_walk(x(i), y(i), theta(i), grid_size, dev_range);
             end % if
             if food(x(i), y(i))                                 % Found food.
@@ -55,9 +57,11 @@ for iter = 1:max_iter
     end % for
     im_data = zeros(grid_size);
     im_data(food > 0) = 60;
-    im_data(p_return > 0) = 50 - p_return(p_return > 0);
-    im_data(z > 0) = 20;
+    im_data(p_search > 0) = 10 + p_search(p_search > 0);
+    im_data(p_return > 0) = 60 - p_return(p_return > 0);
+    im_data(z > 0) = 30;
     pause(delay);
     set(im, 'CData', im_data);                                  % Update image.
-    p_return(p_return > 0) -= 0.1;                              % Pheromone evaporation.
+    p_search(p_search > 0) -= 0.1;                              % Search pheromone evaporation.
+    p_return(p_return > 0) -= 0.1;                              % Return heromone evaporation.
 end % for
