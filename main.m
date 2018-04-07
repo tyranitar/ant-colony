@@ -8,6 +8,7 @@ num_spawned = 0;                    % Number of spawned ants.
 grid_size = 200;                    % Size of simulation grid.
 max_iter = 10000;                   % Number of simulation iterations.
 dev_range = pi / 4;                 % Orientation deviation range.
+spawn_period = 1;                   % Time between ant spawns.
 delay = 0;                          % Delay between draws; only set if the simulation is too fast.
 walk_home = @directed_walk;
 
@@ -20,15 +21,18 @@ has_food = zeros(num_ants, 1);      % Does ant i have food?
 p_search = zeros(grid_size);        % Search pheromone matrix.
 p_return = zeros(grid_size);        % Return pheromone matrix.
 im_data = zeros(grid_size);         % Image data matrix.
-food(grid_size - home_x - 10:grid_size - home_x, grid_size - home_y - 10:grid_size - home_y) = 1;
+
+food_x = grid_size - home_x - 5:grid_size - home_x;
+food_y = grid_size - home_y - 5:grid_size - home_y;
+food(food_x, food_y) = 1;
 
 figure;
 im = image(im_data);
 axis equal;
 axis off;
 for iter = 1:max_iter
-    if num_spawned < num_ants % && mod(iter, 10) == 0
-        num_spawned += 1;                                       % Spawn new ant.
+    if num_spawned < num_ants && mod(iter, spawn_period) == 0   % Spawn new ant.
+        num_spawned += 1;
         z(x(num_spawned), y(num_spawned)) += 1;
     end % if
     for i = 1:num_spawned                                       % Move spawned ants.
