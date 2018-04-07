@@ -9,6 +9,7 @@ grid_size = 200;                    % Size of simulation grid.
 max_iter = 10000;                   % Number of simulation iterations.
 dev_range = pi / 2;                 % Orientation deviation range.
 delay = 0;                          % Delay between draws; only set if the simulation is too fast.
+walk_home = @directed_walk;
 
 x = ones(num_ants, 1) * home_x;     % x coordinate of ant i.
 y = ones(num_ants, 1) * home_y;     % y coordinate of ant i.
@@ -18,7 +19,7 @@ theta = rand(num_ants, 1) * 2 * pi; % Orientation of ant i.
 has_food = zeros(num_ants, 1);      % Does ant i have food?
 p_return = zeros(grid_size);        % Return pheromone matrix.
 im_data = zeros(grid_size);         % Image data matrix.
-food(180:190, 180:190) = 1;         % Set food.
+food(grid_size - home_x - 10:grid_size - home_x, grid_size - home_y - 10:grid_size - home_y) = 1;
 
 figure;
 im = image(im_data);
@@ -32,22 +33,15 @@ for iter = 1:max_iter
     for i = 1:num_spawned % Move spawned ants.
         z(x(i), y(i)) -= 1; % Move ant out of current location.
         if has_food(i)
-            current_dist = dist([x(i), y(i)], [home_x, home_y]); % Current distance to colony.
             p_return(x(i), y(i)) = 10; % Leave pheromone trail.
-            x_i = x(i);
-            y_i = y(i);
-            while dist([x_i, y_i], [home_x, home_y]) >= current_dist
-                [x_i, y_i, theta(i)] = random_walk(x(i), y(i), theta(i), grid_size, dev_range);
-            end % while
-            x(i) = x_i;
-            y(i) = y_i;
+            [x(i), y(i), theta(i)] = walk_home([x(i), y(i)], [home_x, home_y], theta(i), grid_size, dev_range);
             if x(i) == home_x && y(i) == home_y
                 has_food(i) = 0;
             end % if
         else
             [p_found, x_p, y_p] = find_pheromone(p_return, x(i), y(i));
             if p_found
-                theta(i) = cart2pol(x_p - x(i), y_p - y(i))(1);
+                theta(i) = get_theta([x(i), y(i)], [x_p, y_p]);
                 x(i) = x_p;
                 y(i) = y_p;
             else

@@ -25,4 +25,4 @@ function [p_found, x_p, y_p] = find_pheromone(pheromone, x, y)
     if cnt == 1 || x_p == x && y_p == y
         p_found = false;
     end % if
-end
+end % find_pheromone

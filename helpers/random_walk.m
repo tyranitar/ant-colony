@@ -7,4 +7,4 @@ function [x_new, y_new, theta_new] = random_walk(x, y, theta, grid_size, dev_ran
     x_new = bounded(x_new, 1, grid_size);
     y_new = bounded(y_new, 1, grid_size);
     theta_new = wrapped(theta_new);
-end
+end % random_walk
