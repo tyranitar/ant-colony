@@ -26,38 +26,38 @@ im = image(im_data);
 axis equal;
 axis off;
 for iter = 1:max_iter
-    if num_spawned < num_ants && mod(iter, 10) == 0 % Spawn new ant.
+    if num_spawned < num_ants && mod(iter, 10) == 0             % Spawn new ant.
         num_spawned += 1;
         z(x(num_spawned), y(num_spawned)) += 1;
     end % if
-    for i = 1:num_spawned % Move spawned ants.
-        z(x(i), y(i)) -= 1; % Move ant out of current location.
-        if has_food(i)
-            p_return(x(i), y(i)) = 10; % Leave pheromone trail.
+    for i = 1:num_spawned                                       % Move spawned ants.
+        z(x(i), y(i)) -= 1;                                     % Move ant out of current location.
+        if has_food(i)                                          % Return to colony with food.
+            p_return(x(i), y(i)) = 10;                          % Excrete pheromone trail.
             [x(i), y(i), theta(i)] = walk_home([x(i), y(i)], [home_x, home_y], theta(i), grid_size, dev_range);
-            if x(i) == home_x && y(i) == home_y
+            if x(i) == home_x && y(i) == home_y                 % Successfully brought food back to colony.
                 has_food(i) = 0;
             end % if
-        else
+        else                                                    % Search for food.
             [p_found, x_p, y_p] = find_pheromone(p_return, x(i), y(i));
-            if p_found
-                theta(i) = get_theta([x(i), y(i)], [x_p, y_p]);
+            if p_found                                          % Pheromone trail found.
+                theta(i) = get_theta([x(i), y(i)], [x_p, y_p]); % Orient ant in trail direction.
                 x(i) = x_p;
                 y(i) = y_p;
-            else
+            else                                                % No trail found; random walk.
                 [x(i), y(i), theta(i)] = random_walk(x(i), y(i), theta(i), grid_size, dev_range);
             end % if
-            if food(x(i), y(i))
+            if food(x(i), y(i))                                 % Found food.
                 has_food(i) = 1;
             end % if
         end % if
-        z(x(i), y(i)) += 1; % Move ant into new location.
+        z(x(i), y(i)) += 1;                                     % Move ant into new location.
     end % for
     im_data = zeros(grid_size);
     im_data(food > 0) = 60;
     im_data(p_return > 0) = 40 + p_return(p_return > 0);
     im_data(z > 0) = 20;
     pause(delay);
-    set(im, 'CData', im_data); % Update image.
-    p_return(p_return > 0) -= 0.1; % Pheromone evaporation.
+    set(im, 'CData', im_data);                                  % Update image.
+    p_return(p_return > 0) -= 0.1;                              % Pheromone evaporation.
 end % for
