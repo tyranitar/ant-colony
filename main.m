@@ -1,36 +1,53 @@
 addpath('helpers');
 close all;
 
+% System parameters.
+max_iter = inf; % Number of simulation iterations.
+delay = 0; % Delay between draws; only set if the simulation is too fast.
+grid_size = 200; % Size of simulation grid.
 home_x = 10; % x coordinate of ant colony.
 home_y = 10; % y coordinate of ant colony.
 num_ants = 100; % Total number of ants.
-num_spawned = 0; % Number of spawned ants.
-grid_size = 200; % Size of simulation grid.
-max_iter = 4000; % Number of simulation iterations.
-dev_range = pi / 4; % Orientation deviation range.
 spawn_period = 1; % Time between ant spawns.
-delay = 0; % Delay between draws; only set if the simulation is too fast.
+dev_range = pi / 4; % Orientation deviation range.
+counter_th = 250; % Threshold for retreating.
+graph_period = 200; % Data sampling period.
+walk_home = @directed_walk; % Algorithm for returning to colony.
+
+% Boolean system parameters.
+use_pheromone = true; % Use pheromone to find food.
+show_image = true; % Display simulation in real-time.
+show_graph = false; % Plot graph.
 has_predator = false; % Is the predator on the prowl?
 can_retreat = false; % Can the ants retreat to the colony?
-counter_th = 250; % Threshold for retreating.
-use_pheromone = false;
-show_image = false;
-show_graph = true;
-graph_period = 200;
-walk_home = @directed_walk;
 
+% Assertions.
+assert(max_iter > 0);
+assert(delay >= 0);
+assert(grid_size > 0 && grid_size < inf);
+assert(home_x > 0 && home_x <= grid_size);
+assert(home_y > 0 && home_y <= grid_size);
+assert(num_ants > 0 && num_ants < inf);
+assert(spawn_period > 0);
+assert(dev_range < inf);
+assert(counter_th >= 0);
+assert(graph_period > 0);
+assert(max_iter / graph_period >= 1);
+assert(max_iter < inf || ~show_graph);
+
+% Required variables.
 x = ones(num_ants, 1) * home_x; % x coordinate of ant i.
 y = ones(num_ants, 1) * home_y; % y coordinate of ant i.
+theta = rand(num_ants, 1) * 2 * pi; % Orientation of ant i.
 z = zeros(grid_size); % Location matrix.
 food = zeros(grid_size); % Food matrix.
-theta = rand(num_ants, 1) * 2 * pi; % Orientation of ant i.
 has_food = false(num_ants, 1); % Does ant i have food?
 p_search = zeros(grid_size); % Search pheromone matrix.
 p_return = zeros(grid_size); % Return pheromone matrix.
-im_data = zeros(grid_size); % Image data matrix.
 counter = zeros(num_ants, 1); % No encounter counter.
 retreating = false(num_ants, 1); % Is ant i retreating?
 inactive = false(num_ants, 1); % Is ant i inactive?
+num_spawned = 0; % Number of spawned ants.
 num_active = num_ants; % Number of active ants.
 num_alive = num_ants; % Number of alive ants.
 
@@ -44,8 +61,10 @@ pred_x = round(rand() * (grid_size - 1) + 1);
 pred_y = round(rand() * (grid_size - 1) + 1);
 pred_theta = rand() * 2 * pi;
 
+% Initialize main loop.
 iter = 0;
 if show_image
+    im_data = zeros(grid_size); % Image data matrix.
     figure;
     im = image(im_data);
     axis equal;
@@ -56,6 +75,8 @@ if show_graph
     gr_data = zeros(floor(max_iter / graph_period), 1);
     gr_i = 1;
 end % if
+
+% Main loop.
 while num_active > 0 && iter < max_iter
     if num_spawned < num_ants && mod(iter, spawn_period) == 0 % Spawn new ant.
         num_spawned += 1;
@@ -125,6 +146,7 @@ while num_active > 0 && iter < max_iter
     end % if
     if show_image
         im_data = zeros(grid_size);
+        im_data(home_x, home_y) = -60;
         im_data(food > 0) = 60;
         im_data(p_search > 0) = 10 + p_search(p_search > 0);
         im_data(p_return > 0) = 60 - p_return(p_return > 0);
@@ -146,9 +168,15 @@ while num_active > 0 && iter < max_iter
     p_return(p_return > 0) -= 0.1; % Return heromone evaporation.
     iter += 1;
 end % while
+
+% Remaining ants.
+if has_predator
+    fprintf('ants remaining: %d\n', num_alive);
+end % if
+
+% Graph.
 if show_graph
     figure;
     plot(gr_data);
     axis equal;
 end % if
-fprintf('ants remaining: %d\n', num_alive);
