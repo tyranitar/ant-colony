@@ -5,8 +5,8 @@ close all;
 max_iter = 5000; % Number of simulation iterations.
 delay = 0; % Delay between draws; only set if the simulation is too fast.
 grid_size = 200; % Size of simulation grid.
-home_x = 10; % X coordinate of ant colony.
-home_y = 10; % Y coordinate of ant colony.
+home_x = grid_size / 2; % X coordinate of ant colony.
+home_y = grid_size / 2; % Y coordinate of ant colony.
 num_ants = 100; % Total number of ants.
 spawn_period = 1; % Time between ant spawns.
 dev_range = pi / 4; % Orientation deviation range.
@@ -19,7 +19,7 @@ file_name = 'data.mat'; % Data file name.
 use_pheromone = true; % Use pheromone to find food.
 has_predator = false; % Is the predator on the prowl?
 can_retreat = false; % Can the ants retreat to the colony?
-show_image = false; % Display simulation in real-time.
+show_image = true; % Display simulation in real-time.
 show_plot = false; % Plot sampled data.
 save_data = true; % Save sampled data.
 sample_data = show_plot || save_data;
@@ -44,7 +44,8 @@ y = ones(num_ants, 1) * home_y; % y coordinate of ant i.
 theta = rand(num_ants, 1) * 2 * pi; % Orientation of ant i.
 z = zeros(grid_size); % Location matrix.
 food = zeros(grid_size); % Food matrix.
-has_food = false(num_ants, 1); % Does ant i have food?
+% has_food = false(num_ants, 1); % Does ant i have food?
+has_food = zeros(num_ants, 1);
 p_search = zeros(grid_size); % Search pheromone matrix.
 p_return = zeros(grid_size); % Return pheromone matrix.
 counter = zeros(num_ants, 1); % No encounter counter.
@@ -55,9 +56,18 @@ num_active = num_ants; % Number of active ants.
 num_alive = num_ants; % Number of alive ants.
 
 % Initialize food.
-food_x = grid_size - home_x - 5:grid_size - home_x;
-food_y = grid_size - home_y - 5:grid_size - home_y;
-food(food_x, food_y) = 1;
+% food_x = grid_size - home_x - 5:grid_size - home_x;
+% food_y = grid_size - home_y - 5:grid_size - home_y;
+% food(food_x, food_y) = 1;
+
+% food(10:15, 10:15) = 1;
+% food(grid_size - 15:grid_size - 10, grid_size - 15:grid_size - 10) = 2;
+
+% food(grid_size - 15:grid_size - 10, 10:15) = 1;
+% food(10:15, grid_size - 15:grid_size - 10) = 2;
+
+food(grid_size - 15:grid_size - 10, 10:15) = 1;
+food(home_x - 2:home_x + 3, grid_size - 15:grid_size - 10) = 2;
 
 % Initialize predator.
 pred_x = round(rand() * (grid_size - 1) + 1);
@@ -74,8 +84,10 @@ if show_image
     axis off;
 end % if
 if sample_data
-    datum = 0;
-    data = zeros(floor(max_iter / sampling_period), 1);
+    % data = zeros(floor(max_iter / sampling_period), 1);
+    % datum = 0;
+    data = zeros(floor(max_iter / sampling_period), 2);
+    datum = zeros(2, 1);
     data_i = 1;
 end % if
 
@@ -117,9 +129,11 @@ while num_active > 0 && iter <= max_iter
             [x(i), y(i), theta(i)] = walk_home([x(i), y(i)], [home_x, home_y], theta(i), 1, grid_size, dev_range);
             if x(i) == home_x && y(i) == home_y % Successfully brought food back to colony.
                 if sample_data
-                    datum += 1;
+                    % datum += 1;
+                    datum(has_food(i)) += 1;
                 end % if
-                has_food(i) = false;
+                % has_food(i) = false;
+                has_food(i) = 0;
             end % if
         elseif retreating(i)
             if x(i) == home_x && y(i) == home_y
@@ -142,7 +156,8 @@ while num_active > 0 && iter <= max_iter
                 [x(i), y(i), theta(i)] = random_walk(x(i), y(i), theta(i), 1, grid_size, dev_range);
             end % if
             if food(x(i), y(i)) % Found food.
-                has_food(i) = true;
+                % has_food(i) = true;
+                has_food(i) = food(x(i), y(i));
             end % if
         end % if
         z(x(i), y(i)) += 1; % Move ant into new location.
@@ -164,8 +179,11 @@ while num_active > 0 && iter <= max_iter
         set(im, 'CData', im_data); % Update image.
     end % if
     if sample_data && mod(iter, sampling_period) == 0
-        data(data_i) = datum;
-        datum = 0;
+        % data(data_i) = datum;
+        % datum = 0;
+        data(data_i, 1) = datum(1);
+        data(data_i, 2) = datum(2);
+        datum = zeros(2, 1);
         data_i += 1;
         fprintf('iteration: %d\n', iter);
         fflush(stdout);
