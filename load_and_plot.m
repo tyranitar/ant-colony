@@ -13,7 +13,11 @@ hold on;
 % plot(data(:, 1), 'r');
 % plot(data(:, 2), 'b');
 
-load('two_food_sources_unequal_dist.mat');
+% load('two_food_sources_unequal_dist.mat');
+% plot(data(:, 1), 'r');
+% plot(data(:, 2), 'b');
+
+load('data.mat');
 plot(data(:, 1), 'r');
 plot(data(:, 2), 'b');
 

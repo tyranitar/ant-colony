@@ -146,7 +146,7 @@ while num_active > 0 && iter <= max_iter
             p_search(x(i), y(i)) = 10; % Excrete search pheromone trail.
             p_found = false;
             if use_pheromone
-                [p_found, x_p, y_p] = find_pheromone(p_return, x(i), y(i));
+                [p_found, x_p, y_p] = find_pheromone(p_search, p_return, x(i), y(i), 1, grid_size);
             end % if
             if p_found % Return pheromone trail found.
                 theta(i) = get_theta([x(i), y(i)], [x_p, y_p]); % Orient ant in trail direction.
@@ -189,7 +189,7 @@ while num_active > 0 && iter <= max_iter
         fflush(stdout);
     end % if
     p_search(p_search > 0) -= 0.5; % Search pheromone evaporation.
-    p_return(p_return > 0) -= 0.1; % Return heromone evaporation.
+    p_return(p_return > 0) -= 0.1; % Return pheromone evaporation.
     iter += 1;
 end % while
 
