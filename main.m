@@ -2,7 +2,7 @@ addpath('helpers');
 close all;
 
 % System parameters.
-max_iter = inf; % Number of simulation iterations.
+max_iter = 5000; % Number of simulation iterations.
 delay = 0; % Delay between draws; only set if the simulation is too fast.
 grid_size = 200; % Size of simulation grid.
 home_x = 10; % X coordinate of ant colony.
@@ -11,15 +11,18 @@ num_ants = 100; % Total number of ants.
 spawn_period = 1; % Time between ant spawns.
 dev_range = pi / 4; % Orientation deviation range.
 counter_th = 250; % Threshold for retreating.
-sampling_period = 200; % Data sampling period.
+sampling_period = 100; % Data sampling period.
 walk_home = @directed_walk; % Algorithm for returning to colony.
+file_name = 'data.mat'; % Data file name.
 
 % Boolean system parameters.
 use_pheromone = true; % Use pheromone to find food.
-show_image = true; % Display simulation in real-time.
-show_plot = false; % Plot plot.
 has_predator = false; % Is the predator on the prowl?
 can_retreat = false; % Can the ants retreat to the colony?
+show_image = false; % Display simulation in real-time.
+show_plot = false; % Plot sampled data.
+save_data = true; % Save sampled data.
+sample_data = show_plot || save_data;
 
 % Assertions.
 assert(max_iter > 0);
@@ -33,7 +36,7 @@ assert(dev_range < inf);
 assert(counter_th >= 0);
 assert(sampling_period > 0);
 assert(max_iter / sampling_period >= 1);
-assert(max_iter < inf || ~show_plot);
+assert(max_iter < inf || ~sample_data);
 
 % Required variables.
 x = ones(num_ants, 1) * home_x; % x coordinate of ant i.
@@ -62,7 +65,7 @@ pred_y = round(rand() * (grid_size - 1) + 1);
 pred_theta = rand() * 2 * pi;
 
 % Initialize main loop.
-iter = 0;
+iter = 1;
 if show_image
     im_data = zeros(grid_size); % Image data matrix.
     figure;
@@ -70,14 +73,14 @@ if show_image
     axis equal;
     axis off;
 end % if
-if show_plot
-    food_sum = 0;
-    pl_data = zeros(floor(max_iter / sampling_period), 1);
-    pl_i = 1;
+if sample_data
+    datum = 0;
+    data = zeros(floor(max_iter / sampling_period), 1);
+    data_i = 1;
 end % if
 
 % Main loop.
-while num_active > 0 && iter < max_iter
+while num_active > 0 && iter <= max_iter
     if num_spawned < num_ants && mod(iter, spawn_period) == 0 % Spawn new ant.
         num_spawned += 1;
         z(x(num_spawned), y(num_spawned)) += 1;
@@ -113,8 +116,8 @@ while num_active > 0 && iter < max_iter
             end % if
             [x(i), y(i), theta(i)] = walk_home([x(i), y(i)], [home_x, home_y], theta(i), 1, grid_size, dev_range);
             if x(i) == home_x && y(i) == home_y % Successfully brought food back to colony.
-                if show_plot
-                    food_sum += 1;
+                if sample_data
+                    datum += 1;
                 end % if
                 has_food(i) = false;
             end % if
@@ -160,11 +163,11 @@ while num_active > 0 && iter < max_iter
         pause(delay);
         set(im, 'CData', im_data); % Update image.
     end % if
-    if show_plot && mod(iter, sampling_period) == 0
-        pl_data(pl_i) = food_sum;
-        food_sum = 0;
-        pl_i += 1;
-        disp(iter);
+    if sample_data && mod(iter, sampling_period) == 0
+        data(data_i) = datum;
+        datum = 0;
+        data_i += 1;
+        fprintf('iteration: %d\n', iter);
         fflush(stdout);
     end % if
     p_search(p_search > 0) -= 0.5; % Search pheromone evaporation.
@@ -180,6 +183,11 @@ end % if
 % Plot.
 if show_plot
     figure;
-    plot(pl_data);
+    plot(data);
     axis equal;
+end % if
+
+% Save data.
+if save_data
+    save(file_name, 'data');
 end % if
