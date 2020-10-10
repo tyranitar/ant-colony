@@ -1,4 +1,4 @@
-# Ant Colony Simulation
+# Ant Colony
 
 This is a simulation of an ant colony that demonstrates ant collaboration through the use of _pheromone trails_. The simulation states are divided into 4 layers:
 
